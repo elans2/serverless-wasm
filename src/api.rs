@@ -3,6 +3,10 @@ use std::sync::Arc;
 use crate::{executor, storage};
 use serde_json::Value;
 
+#[derive(Debug)]
+struct StorageError;
+impl warp::reject::Reject for StorageError {}
+
 pub fn server(
     storage: Arc<storage::Storage>,
 ) -> impl Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
@@ -33,7 +37,7 @@ async fn register_function(
     let code = body["code"].as_str().ok_or_else(warp::reject::not_found)?;
     storage
         .save_function(function_name.to_string(), code.to_string())
-        .map_err(|_| warp::reject::custom(warp::reject()))?;
+        .map_err(|_| warp::reject::custom(StorageError))?;
     Ok(warp::reply::json(&format!("Function {} registered!", function_name)))
 }
 
